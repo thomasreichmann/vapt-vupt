@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v1
-        
+
       - name: Setup Inso CLI
         uses: kong/setup-inso@v1
         with:
@@ -21,8 +21,7 @@ jobs:
           wrapper: true
       
       - name: Run test suites
-        run: inso run test --ci
-        continue-on-error: true
+        run: inso run test "New Suite" --ci --env "Base Environment"
 
 # only run if the previous step was successful
       - name: Discord notification
