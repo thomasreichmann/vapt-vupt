@@ -1,0 +1,61 @@
+name: Scheduled Availability Check
+
+on:
+  schedule:
+    - cron: '0 */1 * * *'  # Runs every hour
+  workflow_dispatch:        # Allows manual trigger
+
+jobs:
+  check-availability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          
+      - name: Install Newman
+        run: npm install -g newman
+        
+      - name: Run Tests
+        id: tests
+        continue-on-error: true
+        run: |
+          newman run ./specs/vapt.json > test_output.txt
+          echo "::set-output name=status::$?"
+
+      - name: Send Discord notification
+        if: success() || failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ "${{ steps.tests.outputs.status }}" = "0" ]; then
+            MESSAGE_TITLE="✅ Available Dates Found!"
+            COLOR="65280"
+          else
+            MESSAGE_TITLE="❌ No Available Dates"
+            COLOR="16711680"
+          fi
+          
+          CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
+          TEST_OUTPUT=$(cat test_output.txt)
+          
+          payload=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "$MESSAGE_TITLE",
+              "description": "\`\`\`$TEST_OUTPUT\`\`\`",
+              "color": $COLOR,
+              "footer": {
+                "text": "Check ran at $CURRENT_TIME"
+              }
+            }]
+          }
+          EOF
+          )
+          
+          curl -H "Content-Type: application/json" \
+          -d "$payload" \
+          $DISCORD_WEBHOOK
