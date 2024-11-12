@@ -11,8 +11,9 @@ jobs:
   check-availability:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
+      - name: Checkout branch
+        uses: actions/checkout@v1
+        
       - name: Setup Inso CLI
         uses: kong/setup-inso@v1
         with:
