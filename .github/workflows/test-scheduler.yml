@@ -21,50 +21,26 @@ jobs:
       
       - name: Run Tests
         id: run_tests
-        run: inso run test "vapt-vupt-spec" --src ./specs/vapt.json
+        run: inso run test "Your-Test-Suite-Name" --src ./specs/appointment-checker.json
         continue-on-error: true
 
-      - name: Send Discord notification
+      - name: Discord notification
         if: success() || failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          # Get test results from previous step
-          TEST_OUTPUT="${{ steps.run_tests.outputs.stdout }}"
-          TEST_ERROR="${{ steps.run_tests.outputs.stderr }}"
-          EXIT_CODE="${{ steps.run_tests.outcome }}"
-          
-          if [ "$EXIT_CODE" = "success" ]; then
-            MESSAGE_TITLE="✅ Available Dates Found!"
-            COLOR="65280"  # Green
-          else
-            MESSAGE_TITLE="❌ No Available Dates"
-            COLOR="16711680"  # Red
-          fi
-          
-          CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-          
-          # Combine stdout and stderr for complete output
-          FULL_OUTPUT="STDOUT:\n${TEST_OUTPUT}\n\nSTDERR:\n${TEST_ERROR}"
-          
-          # Escape special characters for JSON
-          ESCAPED_OUTPUT=$(echo "$FULL_OUTPUT" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
-          
-          payload=$(cat <<EOF
-          {
-            "embeds": [{
-              "title": "$MESSAGE_TITLE",
-              "description": "\`\`\`\n$ESCAPED_OUTPUT\`\`\`",
-              "color": $COLOR,
-              "footer": {
-                "text": "Check ran at $CURRENT_TIME"
+          DISCORD_USERNAME: "Appointment Checker"
+          DISCORD_AVATAR: "https://github.com/github.png"
+          DISCORD_EMBEDS: |
+            [
+              {
+                "title": "${{ steps.run_tests.outcome == 'success' && '✅ Available Dates Found!' || '❌ No Available Dates' }}",
+                "description": "```\nStdout:\n${{ steps.run_tests.outputs.stdout }}\n\nStderr:\n${{ steps.run_tests.outputs.stderr }}```",
+                "color": ${{ steps.run_tests.outcome == 'success' && 65280 || 16711680 }},
+                "footer": {
+                  "text": "Check ran at ${{ github.event.schedule || 'Manual Trigger' }}"
+                }
               }
-            }]
-          }
-EOF
-          )
-          
-          # Send to Discord
-          curl -H "Content-Type: application/json" \
-          -d "$payload" \
-          $DISCORD_WEBHOOK
+            ]
+        uses: Ilshidur/action-discord@0.3.2
+        with:
+          args: "Appointment availability check completed"
