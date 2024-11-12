@@ -11,10 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout branch
-        uses: actions/checkout@v2
-
-      - name: Setup Inso
-        uses: kong/setup-inso@v1
+        uses: actions/checkout@v1
+      - uses: kong/setup-inso@v1
         with:
           inso-version: 2.4.0
 
