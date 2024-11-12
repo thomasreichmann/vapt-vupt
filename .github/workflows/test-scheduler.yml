@@ -21,7 +21,7 @@ jobs:
           wrapper: true
       
       - name: Run test suites
-        run: inso run test "New Suite" --ci --env "Base Environment"
+        run: inso run test \"New Suite\" --ci --env \"Base Environment\"
 
 # only run if the previous step was successful
       - name: Discord notification
