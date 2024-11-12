@@ -1,70 +1,70 @@
-name: Check Appointment Availability
+name: Scheduled Availability Check
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   schedule:
     - cron: '0 */1 * * *'  # Runs every hour
   workflow_dispatch:        # Allows manual trigger
 
 jobs:
-  Linux:
-    name: Check for available dates
+  check-availability:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v1
-      - uses: kong/setup-inso@v1
+      - uses: actions/checkout@v2
+      
+      - name: Setup Inso CLI
+        uses: kong/setup-inso@v1
         with:
-          inso-version: 2.4.0
-
-      - name: Run test suite
-        id: tests
+          inso-version: 10.1.1
+          wrapper: true
+      
+      - name: Run Tests
+        id: run_tests
+        run: inso run test "vapt-vupt-spec" --src ./specs/vapt.json
         continue-on-error: true
-        run: |
-          OUTPUT=$(inso run test "vapt-vupt-spec" --ci)
-          echo "$OUTPUT" > test_output.txt
-          echo "::set-output name=test_output::$OUTPUT"
-          if echo "$OUTPUT" | grep -q "fail"; then
-            echo "::set-output name=status::failure"
-          else
-            echo "::set-output name=status::success"
-          fi
 
       - name: Send Discord notification
         if: success() || failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ "${{ steps.tests.outputs.status }}" = "success" ]; then
+          # Get test results from previous step
+          TEST_OUTPUT="${{ steps.run_tests.outputs.stdout }}"
+          TEST_ERROR="${{ steps.run_tests.outputs.stderr }}"
+          EXIT_CODE="${{ steps.run_tests.outcome }}"
+          
+          if [ "$EXIT_CODE" = "success" ]; then
             MESSAGE_TITLE="✅ Available Dates Found!"
-            COLOR="65280"
+            COLOR="65280"  # Green
           else
             MESSAGE_TITLE="❌ No Available Dates"
-            COLOR="16711680"
+            COLOR="16711680"  # Red
           fi
           
           CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-          TEST_OUTPUT=$(cat test_output.txt)
           
-          # Escape test output for JSON
-          TEST_OUTPUT=$(echo "$TEST_OUTPUT" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+          # Combine stdout and stderr for complete output
+          FULL_OUTPUT="STDOUT:\n${TEST_OUTPUT}\n\nSTDERR:\n${TEST_ERROR}"
+          
+          # Escape special characters for JSON
+          ESCAPED_OUTPUT=$(echo "$FULL_OUTPUT" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
           
           payload=$(cat <<EOF
           {
             "embeds": [{
               "title": "$MESSAGE_TITLE",
-              "description": "\`\`\`$TEST_OUTPUT\`\`\`",
+              "description": "\`\`\`\n$ESCAPED_OUTPUT\`\`\`",
               "color": $COLOR,
               "footer": {
                 "text": "Check ran at $CURRENT_TIME"
               }
             }]
           }
-          EOF
+EOF
           )
           
+          # Send to Discord
           curl -H "Content-Type: application/json" \
           -d "$payload" \
           $DISCORD_WEBHOOK
