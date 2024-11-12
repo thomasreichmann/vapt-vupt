@@ -21,7 +21,7 @@ jobs:
       
       - name: Run Tests
         id: run_tests
-        run: inso run test "vapt-vupt-spec" --src ./specs/vapt.json
+        run: inso run test "uts_6224a6"
         continue-on-error: true
 
       - name: Discord notification
