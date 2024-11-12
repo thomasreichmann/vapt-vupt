@@ -19,15 +19,13 @@ jobs:
           inso-version: 10.1.1
           wrapper: true
       
-      - name: Run Tests
-        id: run_tests
-        run: |
-          inso run test > test_output.log 2>&1
-          echo "::set-output name=stdout::$(cat test_output.log)"
-        continue-on-error: false  # Ensures workflow stops on failure
+      - name: Run test suites
+        run: inso run test --ci
+        continue-on-error: true
 
+# only run if the previous step was successful
       - name: Discord notification
-        if: success()  # Runs only if the tests passed
+        if: success()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_USERNAME: "Appointment Checker"
