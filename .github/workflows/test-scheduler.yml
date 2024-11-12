@@ -10,6 +10,7 @@ on:
 jobs:
   check-availability:
     runs-on: ubuntu-latest
+    continue-on-error: true   # Allows the job to "soft-fail"
     steps:
       - name: Checkout branch
         uses: actions/checkout@v1
@@ -19,13 +20,14 @@ jobs:
         with:
           inso-version: 10.1.1
           wrapper: true
-      
-      - name: Run test suites
-        run: inso run test \"New Suite\" --ci -w ./specs/vapt.json --env \"Base Environment\"
 
-# only run if the previous step was successful
+      - name: Run test suites
+        id: run_tests              # Add an ID to reference outputs if needed
+        run: inso run test "New Suite" --ci -w ./specs/vapt.json --env "Base Environment"
+      
+      # Run only if "Run test suites" step is successful
       - name: Discord notification
-        if: success()
+        if: success()              # Runs only if previous steps succeed
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_USERNAME: "Appointment Checker"
