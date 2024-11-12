@@ -1,4 +1,4 @@
-name: Scheduled Availability Check
+name: Check Appointment Availability
 
 on:
   schedule:
@@ -7,31 +7,36 @@ on:
 
 jobs:
   check-availability:
+    name: Check for available dates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+      - name: Checkout branch
+        uses: actions/checkout@v2
+
+      - name: Setup Inso
+        uses: kong/setup-inso@v1
         with:
-          node-version: '16'
-          
-      - name: Install Newman
-        run: npm install -g newman
-        
-      - name: Run Tests
+          inso-version: 2.4.0
+
+      - name: Run test suite
         id: tests
         continue-on-error: true
         run: |
-          newman run ./specs/vapt.json > test_output.txt
-          echo "::set-output name=status::$?"
+          OUTPUT=$(inso run test "vapt-vupt-spec" --ci)
+          echo "$OUTPUT" > test_output.txt
+          echo "::set-output name=test_output::$OUTPUT"
+          if echo "$OUTPUT" | grep -q "fail"; then
+            echo "::set-output name=status::failure"
+          else
+            echo "::set-output name=status::success"
+          fi
 
       - name: Send Discord notification
         if: success() || failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ "${{ steps.tests.outputs.status }}" = "0" ]; then
+          if [ "${{ steps.tests.outputs.status }}" = "success" ]; then
             MESSAGE_TITLE="✅ Available Dates Found!"
             COLOR="65280"
           else
@@ -41,6 +46,9 @@ jobs:
           
           CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
           TEST_OUTPUT=$(cat test_output.txt)
+          
+          # Escape test output for JSON
+          TEST_OUTPUT=$(echo "$TEST_OUTPUT" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
           
           payload=$(cat <<EOF
           {
