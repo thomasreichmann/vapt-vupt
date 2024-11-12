@@ -36,7 +36,7 @@ jobs:
             [
               {
                 "title": "✅ Available Dates Found!",
-                "description": "```\n${{ steps.run_tests.outputs.stdout }}```",
+                "description": "<@181270590672338944> ```\n${{ steps.run_tests.outputs.stdout }}```",
                 "color": 65280,
                 "footer": {
                   "text": "Check ran at ${{ github.event.schedule || 'Manual Trigger' }}"
