@@ -20,7 +20,7 @@ jobs:
 
       - name: Run test suites
         id: run_tests              # Add an ID to reference outputs if needed
-        run: inso run test \"New Suite\" --ci -w ./specs/vapt.json --env \"Base Environment\"
+        run: inso run test \"New Suite\" --ci -w ./specs/vapt.json --env \"Base Environment\" --verbose
       
       # Run only if "Run test suites" step is successful
       - name: Discord notification
