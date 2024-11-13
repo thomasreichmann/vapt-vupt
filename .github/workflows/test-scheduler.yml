@@ -17,7 +17,6 @@ jobs:
         uses: kong/setup-inso@v1
         with:
           inso-version: 10.1.1
-          wrapper: true
 
       - name: Run test suites
         id: run_tests              # Add an ID to reference outputs if needed
