@@ -13,10 +13,13 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v1
 
-      - name: Setup Inso CLI
-        uses: kong/setup-inso@v1
-        with:
-          inso-version: 10.1.1
+      - name: Install inso
+        run: |
+          curl -sL https://github.com/Kong/insomnia/releases/download/lib%403.7.0/inso-linux-3.7.0.tar.xz -o inso.tar.xz
+          tar -xf inso.tar.xz
+          rm inso.tar.xz
+          mv inso /usr/local/bin/
+          inso --version
 
       - name: Run test suites
         id: run_tests              # Add an ID to reference outputs if needed
