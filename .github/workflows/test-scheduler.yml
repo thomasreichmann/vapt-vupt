@@ -2,12 +2,12 @@ name: Scheduled Availability Check
 
 on: 
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
   check-availability:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
     continue-on-error: true   # Allows the job to "soft-fail"
     steps:
       - name: Checkout branch
