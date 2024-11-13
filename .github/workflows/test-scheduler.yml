@@ -7,7 +7,7 @@ on:
 
 jobs:
   check-availability:
-    runs-on: [self-hosted, ubuntu-latest]
+    runs-on: [self-hosted]
     continue-on-error: true   # Allows the job to "soft-fail"
     steps:
       - name: Checkout branch
