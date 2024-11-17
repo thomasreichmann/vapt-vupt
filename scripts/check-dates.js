@@ -9,8 +9,8 @@ const config = {
 	discordWebhookUrl: process.env.DISCORD_WEBHOOK_URL,
 	discordUsers: process.env.DISCORD_USER_IDS?.split(',') || [],
 	municipalities: [
-		{ code: 25300, name: 'Municipality 1' },
-		{ code: 25301, name: 'Municipality 2' },
+		{ code: 25300, name: 'Goiania' },
+		{ code: 33800, name: 'Aparecida' },
 		// Add more as needed
 	],
 };
