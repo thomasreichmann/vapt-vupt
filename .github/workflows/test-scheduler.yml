@@ -13,13 +13,34 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v1
 
+      - name: Setup Inso
+        uses: kong/setup-inso@v1
+        with:
+          inso-version: 10.1.1
+          wrapper: true    # Enable output capturing
+
       - name: Run test suites
-        id: run_tests              # Add an ID to reference outputs if needed
+        id: run_tests
         run: inso run test "New Suite" --ci -w ./specs/vapt.json --env "Base Environment" --verbose
+
+      - name: Process test results
+        id: process_results
+        run: |
+          # Extract test results from the previous step
+          echo "test_output<<EOF" >> $GITHUB_ENV
+          echo "${{ toJson(steps.run_tests.outputs) }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Check if there are any passing tests in the output
+          if echo "${{ toJson(steps.run_tests.outputs.stdout) }}" | grep -q "✓"; then
+            echo "has_passing_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_passing_tests=false" >> $GITHUB_OUTPUT
+          fi
       
-      # Run only if "Run test suites" step is successful
+      # Run if any tests passed
       - name: Discord notification
-        if: success()              # Runs only if previous steps succeed
+        if: steps.process_results.outputs.has_passing_tests == 'true'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           DISCORD_USERNAME: "Appointment Checker"
@@ -28,8 +49,15 @@ jobs:
             [
               {
                 "title": "✅ Available Dates Found!",
-                "description": "<@181270590672338944> ```\n${{ steps.run_tests.outputs.stdout }}```",
+                "description": "<@181270590672338944> ```\n${{ fromJson(env.test_output).stdout }}```",
                 "color": 65280,
+                "fields": [
+                  {
+                    "name": "Errors (if any)",
+                    "value": "${{ fromJson(env.test_output).stderr || 'No errors' }}",
+                    "inline": false
+                  }
+                ],
                 "footer": {
                   "text": "Check ran at ${{ github.event.schedule || 'Manual Trigger' }}"
                 }
