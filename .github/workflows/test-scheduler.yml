@@ -13,18 +13,27 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v1
 
+      - name: Create inso directory
+        run: |
+          sudo mkdir -p /home/server/actions-runner/inso
+          sudo chown -R $USER:$USER /home/server/actions-runner/inso
+
       - name: Setup Inso
         uses: kong/setup-inso@v1
         with:
           inso-version: 10.1.1
-          wrapper: true    # Enable output capturing
+          wrapper: true
 
       - name: Run test suites
         id: run_tests
-        run: inso run test "New Suite" --ci -w ./specs/vapt.json --env "Base Environment" --verbose
+        run: |
+          # Ensure inso is in PATH
+          export PATH="/home/server/actions-runner/inso:$PATH"
+          inso run test "New Suite" --ci -w ./specs/vapt.json --env "Base Environment" --verbose
 
       - name: Process test results
         id: process_results
+        if: always()  # Run this step even if previous steps fail
         run: |
           # Extract test results from the previous step
           echo "test_output<<EOF" >> $GITHUB_ENV
@@ -38,7 +47,6 @@ jobs:
             echo "has_passing_tests=false" >> $GITHUB_OUTPUT
           fi
       
-      # Run if any tests passed
       - name: Discord notification
         if: steps.process_results.outputs.has_passing_tests == 'true'
         env:
