@@ -1,0 +1,44 @@
+# save as: .github/workflows/check-dates.yml
+name: Check Available Dates
+
+on:
+    schedule:
+        # Runs every hour
+        - cron: '*/5 * * * *'
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+jobs:
+    check-dates:
+        runs-on: [self-hosted]
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run date checker
+              env:
+                  CLIENT_ID: ${{ secrets.CLIENT_ID }}
+                  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+                  DISCORD_USER_IDS: ${{ secrets.DISCORD_USER_IDS }}
+              run: npm run check
+
+            # Optional: Add error notification
+            - name: Notify on failure
+              if: failure()
+              env:
+                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+              run: |
+                  curl -H "Content-Type: application/json" \
+                    -d "{\"content\": \"⚠️ Date checker script failed to run! Please check the GitHub Actions logs.\"}" \
+                    $DISCORD_WEBHOOK_URL

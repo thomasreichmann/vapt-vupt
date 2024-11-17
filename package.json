@@ -1,0 +1,12 @@
+{
+	"name": "date-checker",
+	"version": "1.0.0",
+	"description": "Check available dates for municipalities",
+	"main": "scripts/check-dates.js",
+	"scripts": {
+		"check": "node scripts/check-dates.js"
+	},
+	"dependencies": {
+		"axios": "^1.6.2"
+	}
+}
