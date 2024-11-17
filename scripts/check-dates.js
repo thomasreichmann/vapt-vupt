@@ -200,7 +200,7 @@ checkAllMunicipalities()
 		console.log(
 			`Municipalities with available dates: ${result.municipalitiesWithDates}`
 		);
-		process.exit(result.municipalitiesWithDates > 0 ? 0 : 1);
+		process.exit(result.success ? 0 : 1);
 	})
 	.catch((error) => {
 		console.error('Script failed:', error);
